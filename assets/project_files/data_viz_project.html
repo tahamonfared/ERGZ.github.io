@@ -1,0 +1,161 @@
+<head>
+	<title>Bay Are Bike Share</title>
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.12/d3.js"></script>
+	<!-- Latest compiled and minified CSS -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+	<link href="favicon.ico" rel="icon" type="image/x-icon" />
+	<style type="text/css">
+		.xaxis path,
+		.xaxis line,
+		.yaxis path,
+		.yaxis line {
+			fill: none;
+			stroke: black;
+			shape-rendering: crispEdges;
+		}
+		.axis text {
+			font-family: helvetica;
+			font-size: 15px;
+		}
+
+		button  {
+			padding-top: 10px;
+		}
+
+	
+
+	</style>
+</head>
+<body>
+
+	<script type="text/javascript">
+		//global variables
+		var W = 700
+		var H = 350
+		var padding = 40
+
+		var numDataPoints = 50;
+		
+
+		// function to generatet coordinates 
+		var generateRandomData  = function(numDataPoints) {
+			var dataset = [];
+			var xrange = Math.random() * 100;
+			var yrange = Math.random() * 100;
+
+			for (var i = 0; i < numDataPoints; i++) {
+				var newNumberx = (Math.random() * xrange);
+				var newNumbery = (Math.random() * yrange);
+				dataset.push([newNumberx, newNumbery]);
+			}	
+			
+			return dataset;
+		}
+		
+		var dataset = generateRandomData(numDataPoints);
+
+
+	// create the svg to draw upon
+	var svg = d3.select("body")
+	.append("svg")
+	.attr("width", W)
+	.attr("height", H);
+
+	// lets just create some circles to test
+	var xscale = d3.scale.linear()
+	.domain([0, d3.max(dataset, function(d) {return d[0];})])
+	.range([padding,W - padding]);
+
+	var yscale = d3.scale.linear()
+	.domain([0, d3.max(dataset, function(d) {return d[1];})])
+	.range([H - padding, padding]);
+
+	var xAxis = d3.svg.axis()
+	.scale(xscale)
+	.orient("bottom");
+
+	var yAxis = d3.svg.axis()
+	.scale(yscale)
+	.orient("left")
+	.ticks(5);
+
+	svg.selectAll("circle")
+	.data(dataset)
+	.enter()
+	.append("circle")
+	.on("mouseover", function() {
+		d3.select(this).attr("fill", "orange");
+	})
+	.on("mouseout", function(d) {
+		d3.select(this).attr("fill", "rgba(87,158," + Math.round(d[1]*5) + ",.75)");
+	})
+	.attr("cx", function(d) { return xscale(d[0])})
+	.attr("cy", function(d) { return yscale(d[1])})
+	.attr("r", function(d) { return d[1]*.5})
+	.attr("fill", function(d) {
+		return "rgba(87,158," + Math.round(d[1]*5) + ",.75)";
+	})
+	.attr("stroke", "black");
+
+	svg.append("g")
+	.attr("class", "xaxis")
+	.attr("transform", "translate(0," + (H - padding) + ")")
+	.call(xAxis);
+
+	svg.append("g")
+	.attr("class", "yaxis")
+	.attr("transform", "translate(" + padding + ",0)")
+	.call(yAxis);
+
+	// // create the random data button
+	// var btn = document.createElement("BUTTON");
+	// btn.type 
+	// var t = document.createTextNode("Generate Random Data");
+	// btn.appendChild(t);
+	// document.body.appendChild(btn);
+
+
+
+</script>
+
+<center>
+<button type="submit" class="btn btn-primary">Generate Random Numbers</button>
+</center>
+
+<script type="text/javascript">
+	d3.select("button")
+	.on("click", function() {
+		var dataset = generateRandomData(numDataPoints);
+
+		xscale.domain([0, d3.max(dataset, function(d) {return d[0];})])
+		yscale.domain([0, d3.max(dataset, function(d) {return d[1];})])
+
+		svg.selectAll("circle")
+		.data(dataset)
+		.transition()
+		.duration(500)
+		.attr("cx", function(d) { return xscale(d[0])})
+		.attr("cy", function(d) { return yscale(d[1])})
+		.attr("r", function(d) { return d[1]*.5})
+		.attr("fill", function(d) {
+			return "rgba(97,158," + Math.round(d[1]*10) + ",.75)";
+		})
+		.attr("stroke", "black");
+
+
+
+		xAxis.scale(xscale);
+		yAxis.scale(yscale);
+
+		svg.selectAll("g.xaxis")
+		.transition()
+		.call(xAxis);
+
+		svg.selectAll("g.yaxis")
+		.transition()
+		.call(yAxis);
+
+	});
+
+</script>
+</body>

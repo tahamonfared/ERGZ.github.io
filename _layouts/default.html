@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en-us">
+
+  {% include head.html %}
+
+  <body class='theme-base-ubuntu'>
+
+    {% include sidebar.html %}
+
+    <div class="content container">
+      {{ content }}
+    </div>
+    <script type="text/x-mathjax-config">
+    	MathJax.Hub.Config({
+       	tex2jax: {inlineMath:[['\\(','\\)']]}
+    	});
+    	</script>
+      <!-- add ['$','$'], to the mathjax above to enable inline $ $ -->
+
+
+
+  </body>
+</html>

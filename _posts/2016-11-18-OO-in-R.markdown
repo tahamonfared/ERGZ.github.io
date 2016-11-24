@@ -1,0 +1,308 @@
+---
+layout: post
+title: "S3: An OO System in R"
+---
+
+## Introduction
+
+R comes with several Object Oriented systems. These are S3, S4 and Reference Classes.
+This post will focus on S3, as this is the only one used through out
+R, and by the core developement team. Coming from languages like Python, C++
+and Java the S3 system appears to be a little funky and adhoc, yet it is completely
+valid OO system. It however is very minimial and in fact lacks formal definitions
+of classes. Having said that, its minimalism allows it to be very flexible.
+
+One of the main reasons for the S3 OO system is to allow instances of classes
+interact in certain ways with base R functions like `print`, `summary` and `plot`.
+In doing so one can package a clean and interactive system taylored to the needs
+of a specific scientific community.
+
+I will begin with creating classes and objects, followed by a dicussion of methods
+and method dispatch. I will end with a brief discussion of identifying existing
+objects.
+
+## Defining a Class and Creating an Object
+
+As mentioned above S3 is very minimal, and somewhat adhoc.
+
+We can "create" a class in two ways (*note here that there is no formal definition
+	of a class in S3, it's simply an attached attribute to an object*):
+
+We can create an object (list in this case) and assign to it a class.
+
+~~~r
+employee <- list()
+class(employee) <- "employee"
+~~~
+
+We can use the `structure` function to do the same, this is my preferred way.
+
+~~~r
+employee <- structure(list(), class = "employee")
+~~~
+
+Really that is all there is to it.
+
+Now we should see this when printed,
+
+~~~
+> employee
+list()
+attr(,"class")
+[1] "employee"
+~~~
+
+Like more traditional OO systems, we can create a constructor. In R this is just
+a function.
+
+~~~r
+# to make a new employee instance we need an id, name and salary
+employee <- function(id, name, salary) {
+	if (missing(id) || missing(name) || missing(salary)) # check these are provided
+		stop("Class constructor requires 3 arguments")
+	if (!is.numeric(id)) stop("id must be an integer")
+	if (!is.character(name)) stop("name must be a string")
+	if (!is.numeric(salary)) stop("salary must be a double")
+
+	structure(list(id=id, name=name, salary=salary), class="employee")
+}
+~~~
+
+Creating an instance of the class can now be simply done,
+
+~~~r
+emanuel <- employee(123, "emanuel", 30000)
+~~~
+
+Note that without the constructor `emanuel <- employee()` is valid, and so its
+up to the programmer to protect the structure of a class. Using the constructor
+created above also yields the following errors:
+
+~~~
+> emanuel <- employee()
+Error in employee() : Class constructor required 3 arguments!
+> emanuel <- employee("23", "324", "sdfs")
+Error in employee("23", "324", "sdfs") : id must be numeric type
+~~~
+
+## Methods and Method Dispatch
+
+Unlike Java or C++ where objects determine what method to call, S3 implements what
+is known as generic function OO. In this case it is up to a generic function to
+determine what method to call. Generic functions are everywhere in R, and some are
+used without event thinking what is really happining. `summary` is a great example.
+It behaves differently with different objects, but somehow it knows what to do. This
+is S3 in the background taking care of business. We can explicitly see all the methods
+associated with `summary`
+
+~~~r
+methods(summary)
+~~~
+
+~~~
+ [1] summary.aov                    summary.aovlist*              
+ [3] summary.aspell*                summary.check_packages_in_dir*
+ [5] summary.connection             summary.data.frame            
+ [7] summary.Date                   summary.default               
+ [9] summary.ecdf*                  summary.factor                
+[11] summary.glm                    summary.infl*                 
+[13] summary.lm                     summary.loess*                
+[15] summary.manova                 summary.matrix                
+[17] summary.mlm*                   summary.nls*                  
+[19] summary.packageStatus*         summary.PDF_Dictionary*       
+[21] summary.PDF_Stream*            summary.POSIXct               
+[23] summary.POSIXlt                summary.ppr*                  
+[25] summary.prcomp*                summary.princomp*             
+[27] summary.proc_time              summary.srcfile               
+[29] summary.srcref                 summary.stepfun               
+[31] summary.stl*                   summary.table                 
+[33] summary.tukeysmooth*          
+see '?methods' for accessing help and source code
+~~~
+
+In my opinion the above is reason enought to never use "`.`" in variable names.
+Instead one should use underscores or camelcase to name objects.  
+
+We can also go the other way and check what generic functions are associated with
+a given class
+
+~~~r
+methods(class = "glm")
+~~~
+
+~~~
+ [1] add1           anova          coerce         confint        cooks.distance
+ [6] deviance       drop1          effects        extractAIC     family        
+[11] formula        influence      initialize     logLik         model.frame   
+[16] nobs           predict        print          residuals      rstandard     
+[21] rstudent       show           slotsFromS3    summary        vcov          
+[26] weights       
+see '?methods' for accessing help and source code
+~~~
+
+Our goal in this section is to both create a generic function for employee, as well
+append a method to a generic function for employee. We beign by first creating a
+generic function.
+
+### Creating a Generic Function
+
+To create a generic function we simply do,
+
+~~~r
+f <- function(x) UseMethod("f")
+~~~
+
+Next we add methods to this generic function using the "`.`".
+
+~~~r
+f.employee <- function(x) "A Method for employee!"
+~~~
+
+Calling the function with the `emanuel` yields,
+
+~~~r
+f(emanuel)
+~~~
+
+~~~
+"A method for employee!"
+~~~
+
+This was a toy example. However, we can use the same idea to append to existing
+generics like `summary` or `plot` for very powerful interactive computing.
+
+### Appending Methods to Existing Generics
+
+Let's first look at the `summary`
+
+~~~r
+summary(emanuel)
+~~~
+
+~~~
+       Length Class  Mode     
+id     1      -none- numeric  
+name   1      -none- character
+salary 1      -none- numeric  
+~~~
+
+We would want summary to behave differently when used on an "employee" object. So
+we need to add a method to it,
+
+~~~r
+summary.employee <- function(employee) {
+	cat(
+		"Employee: ", employee$id, "\n",
+		"Name: ", employee$name, "\n",
+		"Salary: ", employee$salary, "\n"
+	)
+}
+~~~
+
+Now we can call summary on `emanuel`
+
+~~~r
+summary(emanuel)
+~~~
+
+~~~
+Employee:  123
+Name:  emanuel rodriguez
+Salary:  20000
+~~~
+
+Let us do the same with `plot`.
+
+~~~r
+plot.employee <- function(employee) {
+	barplot(employee$salary)
+}
+~~~
+
+and now we can call
+
+~~~r
+plot(emanuel)
+~~~
+
+to yield a simple barplot.
+
+### Method Dispatch
+
+Method dispatch in R is simply the order of classes in a vector. With "default"
+always as the last element of this vector. When dispatching methods this vector
+will look something like,
+
+~~~
+[1] "myFunc.class1"  "myFunc.class2"  "myFunc.default"
+~~~
+
+When dispatching R will cycle through the list of classes associated with an
+object and dispatch. The default method is always the last element as a fall back.
+
+## Identifying S3 Objects
+
+Identifying S3 objects is not straightforward using base R, however we can use
+`pryr` to do the work for us. Pryr has two function `pryr::otype` and `pryr::ftype`
+to help us identify S3 objects. For this section we will look at built in objects
+to identify.
+
+~~~r
+library(pryr)
+
+# what type is a data frame?
+pryr::otype(data.frame(x = 1:10, y = 20:30))
+~~~
+
+~~~
+[1] "S3"
+~~~
+
+~~~r
+# what type is a vector?
+pryr::otype(1:10)
+~~~
+
+~~~
+[1] "base"
+~~~
+
+The above should not be a surprise. As we saw in the two sections above, the OO
+system is implemented through generic functions and methods associated with these.
+Let's try and identify those.
+
+One of the most used functions in R `summary`
+
+~~~r
+pryr::ftype(summary)
+~~~
+
+~~~
+[1] "s3"      "generic"
+~~~
+
+So we have that `summary` is an S3 generic functions. Another way to identify a
+generic function is by inspecting the source code using `body`.
+
+~~~r
+body(summary)
+~~~
+
+~~~
+UseMethod("summary")
+~~~
+
+`UseMethod` tells us this is in fact a generic function.
+
+We know that `summary` has methods associated with it, we can identify them as well.
+
+~~~r
+pryr::ftype(summary.aov)
+~~~
+
+~~~
+[1] "s3"     "method"
+~~~
+
+Calling `body` on `summary.aov` will show the entire source code, and not a call
+to `UseMethod`.

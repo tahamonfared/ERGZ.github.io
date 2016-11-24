@@ -1,0 +1,26 @@
+# Dependencies
+markdown:         kramdown
+
+# Permalinks
+permalink:        pretty
+# Setup
+title:            Emanuel Rodriguez
+tagline:          'Statistics, Data Science and ML'
+description:      'Statistics, Data Science, ML and Programming'
+url:              http://emanrgz.com
+baseurl:          '/'
+
+author:
+  name:           'Emanuel Rodriguez'
+  url:            https://twitter.com/emanrgz
+
+paginate:         5
+
+# gems
+gems: [jekyll-paginate]
+
+# Custom vars
+version:          2.1.0
+
+github:
+  repo:           https://github.com/ERGZ
